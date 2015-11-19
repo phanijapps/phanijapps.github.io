@@ -1,0 +1,12 @@
+// host = '172.16.153.122';	// hostname or IP address
+host = 'test.mosquitto.org';	// hostname or IP address
+// host = '172.16.153.110';	// hostname or IP address
+port = 8080;
+topic = 'devices/led/set';		// topic to subscribe to
+pubTopic = 'devices/led/get';
+useTLS = false;
+username = null;
+password = null;
+// username = "jjolie";
+// password = "aa";
+cleansession = true;

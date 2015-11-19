@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>PRFT IOT Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+
+    <script src="mqttws31.js" type="text/javascript"></script>
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js" type="text/javascript"></script>
+    <script src="config.js" type="text/javascript"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js" type="text/javascript"></script>
+    <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.0/css/bootstrap-toggle.min.css" rel="stylesheet">
+    <script src="https://gitcdn.github.io/bootstrap-toggle/2.2.0/js/bootstrap-toggle.min.js"></script>
+
+    <script type="text/javascript">
+    var mqtt;
+    var reconnectTimeout = 2000;
+    var remoteToggle = false;
+    function MQTTconnect() {
+        mqtt = new Paho.MQTT.Client(
+                        host,
+                        port,
+                        "web_" + parseInt(Math.random() * 100,
+                        10));
+        var options = {
+            timeout: 3,
+            useSSL: useTLS,
+            cleanSession: cleansession,
+            onSuccess: onConnect,
+            onFailure: function (message) {
+                $('#status').html("Connection failed: " + message.errorMessage + "Retrying");
+                setTimeout(MQTTconnect, reconnectTimeout);
+            }
+        };
+
+        mqtt.onConnectionLost = onConnectionLost;
+        mqtt.onMessageArrived = onMessageArrived;
+
+        if (username != null) {
+            options.userName = username;
+            options.password = password;
+        }
+        console.log("Host="+ host + ", port=" + port + " TLS = " + useTLS + " username=" + username + " password=" + password);
+        mqtt.connect(options);
+    }
+
+    function onConnect() {
+        var message = '<strong>Connected to ' + host + ':' + port + '</strong>'
+        // Connection succeeded; subscribe to our topic
+        mqtt.subscribe(topic, {qos: 0});
+
+        sendMessage('status');
+
+        $('#status').html(message);
+    }
+
+    function onConnectionLost(response) {
+        setTimeout(MQTTconnect, reconnectTimeout);
+        $('#status').val("connection lost: " + responseObject.errorMessage + ". Reconnecting");
+
+    };
+
+    function onMessageArrived(message) {
+
+        var topic = message.destinationName;
+        var payload = message.payloadString;
+
+        //$('#ws').prepend('<li>' + topic + ' = ' + payload + '</li>');
+        console.debug(payload)
+        if(payload == "on"){
+              $('#onOffSwitch').bootstrapToggle('on')
+              remoteToggle = true;
+        }
+        else if (payload == "off") {
+          $('#onOffSwitch').bootstrapToggle('off')
+             remoteToggle = true;
+
+        }
+    };
+
+    function sendMessage(message) {
+       var msg = new Paho.MQTT.Message(message);
+       msg.destinationName = pubTopic;
+       mqtt.send(msg);
+       //console.debug("Message Sent");
+    }
+
+
+
+
+    $(document).ready(function() {
+        MQTTconnect();
+
+
+
+        $('.toggle-on').click(function () {
+          sendMessage('off');
+        });
+
+        $('.toggle-off').click(function () {
+          sendMessage('on');
+        });
+
+        $('.toggle-handle').click(function () {
+          var prop = $('#onOffSwitch').prop('checked');
+          console.debug(prop);
+
+          if(prop == false){
+            sendMessage('on');
+          }
+          else{
+            sendMessage('off');
+          }
+        });
+
+    });
+
+    </script>
+  </head>
+  <body>
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+     <div class="container">
+       <div class="navbar-header">
+         <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+           <span class="sr-only">Toggle navigation</span>
+           <span class="icon-bar"></span>
+           <span class="icon-bar"></span>
+           <span class="icon-bar"></span>
+         </button>
+         <a class="navbar-brand" href="#">Light Switch Moment</a>
+       </div>
+       <div id="navbar" class="collapse navbar-collapse">
+
+       </div><!--/.nav-collapse -->
+     </div>
+   </nav>
+
+    <div class="container" style="margin-top:70px;">
+        <div class="row">
+          <div class="col-md-4">
+             <div id="status" class="well"></div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <input id="onOffSwitch" data-toggle="toggle" type="checkbox">
+              <span id="onSwitchSpan"></span>
+            </input>
+          </div>
+        </div>
+    </div>
+  </body>
+</html>
